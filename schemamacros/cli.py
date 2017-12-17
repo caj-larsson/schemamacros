@@ -11,7 +11,8 @@ def compile_schema(config_path):
     try:
         workdir = os.path.dirname(config_path)
         file_path = os.path.basename(config_path)
-        os.chdir(workdir)
+        if workdir != '':
+            os.chdir(workdir)
         config = yaml_load(open(file_path).read())
         cm(config)
     finally:
