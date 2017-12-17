@@ -11,8 +11,8 @@ from setuptools import setup, find_packages
 
 setup(
     name='schemamacros',
-    version='0.0.1',
-    url='http://',
+    version='0.1.0',
+    url='https://github.com/caj-larsson/schemamacros',
     license='MIT',
     author='Caj Larsson',
     author_email='contact@caj.me',
@@ -23,10 +23,15 @@ setup(
     include_package_data=True,
     platforms='any',
     install_requires=[
+        'Click',
         'attrs',
         'jinja2',
         'pyaml'
     ],
+    entry_points='''
+        [console_scripts]
+        sm-compile=schemamacros.cli:compile_schema
+    ''',
     classifiers=[
         'Environment :: Web Environment',
         'Intended Audience :: Developers',

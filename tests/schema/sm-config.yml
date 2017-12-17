@@ -1,0 +1,8 @@
+version: "1"
+template_directories:
+  - "templates"
+transaction: True
+output: "schema-out.sql"
+variables:
+  test_var: "FOO"
+schema_template: "schema.sql"
