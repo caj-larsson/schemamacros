@@ -8,6 +8,27 @@ def config_dict():
         "template_directories": [
             "tests/schema/templates",
         ],
+        "template_packages": [],
+        "variables": {
+            "test_var": "FOO"
+        },
+        "transaction": True,
+        "output": ".",
+        "version": "1.0",
+        "schema_template": "schema.sql"
+    }
+
+
+@pytest.fixture
+def config_dict_modules():
+    return {
+        "template_directories": [],
+        "template_packages": [
+            {
+                "package_name": "tests.schema",
+                "template_path": "templates"
+            }
+        ],
         "variables": {
             "test_var": "FOO"
         },
@@ -29,6 +50,7 @@ def config_yaml():
 version: "1"
 template_directories:
     - "tests/schema/templates"
+template_packages: []
 transaction: True
 output: "."
 variables:

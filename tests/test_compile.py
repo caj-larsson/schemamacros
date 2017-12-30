@@ -30,7 +30,9 @@ def test_layout_txn():
 
 def test_build_loader(config_dict):
     config = cfg.Config(**config_dict)
-    loader = c.build_loader(config.template_directories, True)
+    loader = c.build_loader(config.template_directories,
+                            config.template_packages,
+                            True)
 
     assert(isinstance(loader, loaders.ChoiceLoader))
     env = Environment(loader=loader)
@@ -48,6 +50,20 @@ def test_render(config_dict):
 
 def test_compile(config_dict):
     config = cfg.Config(**config_dict)
+    schema_text = c.render(config).strip()
+
+    with tempfile.NamedTemporaryFile('r') as f:
+        config.output = f.name
+        c.compile(config)
+        schema_text_c = f.read().strip()
+
+    assert(schema_text_c != '' and type(schema_text_c) == str)
+    assert(schema_text != '')
+    assert(schema_text_c == schema_text)
+
+
+def test_module_templates(config_dict_modules):
+    config = cfg.Config(**config_dict_modules)
     schema_text = c.render(config).strip()
 
     with tempfile.NamedTemporaryFile('r') as f:

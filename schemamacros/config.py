@@ -22,14 +22,30 @@ class TemplateDir(str):
 
 
 @attr.s
+class TemplatePackage(object):
+    package_name: str = attr.ib(validator=attr.validators.instance_of(str))
+    template_path: str = attr.ib(validator=attr.validators.instance_of(str))
+
+    @classmethod
+    def from_dict(cls, config_obj):
+        return cls(**config_obj)
+
+
+@attr.s
 class Config(object):
     transaction: bool = attr.ib(validator=attr.validators.instance_of(bool))
     schema_template: str = attr.ib(validator=attr.validators.instance_of(str))
     output: str = attr.ib(validator=attr.validators.instance_of(str))
     variables: typing.Mapping[str, str] = attr.ib()
+
     template_directories: typing.List[TemplateDir] = attr.ib(
         validator=attr.validators.instance_of(list),
         convert=lambda x: list(map(TemplateDir, x)))
+
+    template_packages: typing.List[TemplatePackage] = attr.ib(
+        validator=attr.validators.instance_of(list),
+        convert=lambda x: list(map(TemplatePackage.from_dict, x)))
+
     version: str = attr.ib(validator=attr.validators.in_(["1", "1.0"]))
 
 

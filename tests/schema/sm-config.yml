@@ -1,6 +1,7 @@
 version: "1"
 template_directories:
   - "templates"
+template_packages: []
 transaction: True
 output: "schema-out.sql"
 variables:
