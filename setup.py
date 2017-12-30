@@ -11,7 +11,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='schemamacros',
-    version='0.1.2',
+    version='0.1.3',
     url='https://github.com/caj-larsson/schemamacros',
     license='MIT',
     author='Caj Larsson',
