@@ -13,7 +13,7 @@ def config_dict():
             "test_var": "FOO"
         },
         "transaction": True,
-        "output": ".",
+        "output": "schema_out.sql",
         "version": "1.0",
         "schema_template": "schema.sql"
     }
@@ -33,7 +33,7 @@ def config_dict_modules():
             "test_var": "FOO"
         },
         "transaction": True,
-        "output": ".",
+        "output": "schema_out.sql",
         "version": "1.0",
         "schema_template": "schema.sql"
     }
@@ -52,7 +52,7 @@ template_directories:
     - "tests/schema/templates"
 template_packages: []
 transaction: True
-output: "."
+output: schema_out.sql
 variables:
     test_var: "FOO"
 schema_template: "schema.sql"

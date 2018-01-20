@@ -1,5 +1,5 @@
-# import typing
-# import attr
+import typing
+from .config import ConfigInternal, TargetConfig
 from jinja2 import loaders, Environment
 
 
@@ -22,24 +22,53 @@ def build_layout(transaction, headers=[header_tpl], before_schema="", after_sche
     return headers_text + before_schema + schema_block_tpl + after_schema
 
 
-def build_loader(paths, packages, transaction):
+def build_loader(paths, packages):
     fs_loaders = [loaders.FileSystemLoader(path) for path in paths]
     package_loaders = [loaders.PackageLoader(package.package_name, package.template_path)
                        for package in packages]
-    system_loader = loaders.DictLoader({"layout": build_layout(transaction)})
-    return loaders.ChoiceLoader(fs_loaders + package_loaders + [system_loader])
+
+    return loaders.ChoiceLoader(fs_loaders + package_loaders)
 
 
-def render(config):
-    loader = build_loader(config.template_directories,
-                          config.template_packages,
-                          config.transaction)
+def render_abstract(template: str,
+                    loader: loaders.BaseLoader,
+                    variables: typing.Mapping[str, str]):
+
     env = Environment(loader=loader)
-    schema_tpl = env.get_template(config.schema_template)
-    return schema_tpl.render(config.variables)
+    schema_tpl = env.get_template(template)
+    return schema_tpl.render(variables)
 
 
-def compile(config):
-    schema_text = render(config)
-    with open(config.output, 'w') as f:
-        f.write(schema_text)
+def render_target(project_loader: loaders.BaseLoader,
+                  project_variables: typing.Mapping[str, str],
+                  target: TargetConfig):
+
+    variables = dict(project_variables)
+    variables.update(target.variables)
+
+    layout = build_layout(target.transaction)
+    layout_loader = loaders.DictLoader({"layout": layout})
+    target_loader = loaders.ChoiceLoader([project_loader, layout_loader])
+
+    render_text = render_abstract(target.schema_template,
+                                  target_loader,
+                                  variables)
+    return render_text
+
+
+def render(config: ConfigInternal):
+    loader = build_loader(config.template_directories,
+                          config.template_packages)
+    output = {outpath: render_target(loader,
+                                     config.variables,
+                                     target)
+              for outpath, target in config.targets.items()}
+
+    return output
+
+
+def compile(config: ConfigInternal):
+    for outpath, schema_text in render(config).items():
+        with open(outpath, 'w') as f:
+            f.write(schema_text)
+            f.flush()

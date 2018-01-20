@@ -3,4 +3,6 @@
 
 {{ test_var }}
 
+-- Not empty
+
 {% endblock %}

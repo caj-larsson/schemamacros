@@ -1,5 +1,6 @@
 import typing
 import attr
+from attr import validators as v
 import yaml
 import os
 
@@ -23,8 +24,8 @@ class TemplateDir(str):
 
 @attr.s
 class TemplatePackage(object):
-    package_name: str = attr.ib(validator=attr.validators.instance_of(str))
-    template_path: str = attr.ib(validator=attr.validators.instance_of(str))
+    package_name: str = attr.ib(validator=v.instance_of(str))
+    template_path: str = attr.ib(validator=v.instance_of(str))
 
     @classmethod
     def from_dict(cls, config_obj):
@@ -32,22 +33,91 @@ class TemplatePackage(object):
 
 
 @attr.s
-class Config(object):
-    transaction: bool = attr.ib(validator=attr.validators.instance_of(bool))
-    schema_template: str = attr.ib(validator=attr.validators.instance_of(str))
-    output: str = attr.ib(validator=attr.validators.instance_of(str))
+class TargetConfig(object):
+    transaction: bool = attr.ib(validator=v.instance_of(bool))
+    schema_template: str = attr.ib(validator=v.instance_of(str))
+    output: str = attr.ib(validator=v.instance_of(str))
     variables: typing.Mapping[str, str] = attr.ib()
 
+
+@attr.s
+class ConfigInternal(object):
     template_directories: typing.List[TemplateDir] = attr.ib(
-        validator=attr.validators.instance_of(list),
-        convert=lambda x: list(map(TemplateDir, x)))
+        validator=v.instance_of(list),
+        convert=lambda x: list(map(TemplateDir, x)),
+        default=[]
+    )
 
     template_packages: typing.List[TemplatePackage] = attr.ib(
-        validator=attr.validators.instance_of(list),
-        convert=lambda x: list(map(TemplatePackage.from_dict, x)))
+        validator=v.instance_of(list),
+        convert=lambda x: list(map(TemplatePackage.from_dict, x)),
+        default=[]
+    )
 
-    version: str = attr.ib(validator=attr.validators.in_(["1", "1.0"]))
+    variables: typing.Mapping[str, str] = attr.ib(default=dict())
+
+    targets: typing.Mapping[str, str] = attr.ib(default=dict())
+
+
+@attr.s
+class ConfigfileVersion1(object):
+    version: str = attr.ib(validator=v.in_(["1", "1.0"]))
+
+    schema_template: str = attr.ib(validator=v.instance_of(str))
+
+    output: str = attr.ib(validator=attr.validators.instance_of(str))
+
+    template_directories: typing.List[TemplateDir] = attr.ib(
+        validator=v.instance_of(list)
+    )
+
+    transaction: bool = attr.ib(
+        validator=v.instance_of(bool),
+        default=False
+    )
+
+    variables: typing.Mapping[str, str] = attr.ib(default=dict())
+
+    template_packages: typing.List[TemplatePackage] = attr.ib(
+        validator=v.instance_of(list),
+        default=[]
+    )
+
+    def extract(self) -> ConfigInternal:
+        target_config = TargetConfig(
+            transaction=self.transaction,
+            schema_template=self.schema_template,
+            output=self.output,
+            variables={}
+        )
+        config = ConfigInternal(
+            template_directories=self.template_directories,
+            template_packages=self.template_packages,
+            variables=self.variables,
+            targets={self.output: target_config}
+        )
+        return config
+
+
+CONFIG_FILE_VERSIONS = {
+    "1": ConfigfileVersion1,
+    "1.0": ConfigfileVersion1
+}
+
+
+def build_config_inner(config_dict) -> ConfigInternal:
+    if "version" not in config_dict:
+        raise ValueError("Config does not have a version")
+
+    version = str(config_dict["version"])
+
+    if version not in CONFIG_FILE_VERSIONS:
+        raise ValueError("Version %s is not supported", version)
+
+    versioned_config = CONFIG_FILE_VERSIONS[version](**config_dict)
+
+    return versioned_config.extract()
 
 
 def yaml_load(yaml_text):
-    return Config(**yaml.load(yaml_text))
+    return build_config_inner(yaml.load(yaml_text))
