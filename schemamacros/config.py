@@ -34,10 +34,12 @@ class TemplatePackage(object):
 
 @attr.s
 class TargetConfig(object):
-    transaction: bool = attr.ib(validator=v.instance_of(bool))
     schema_template: str = attr.ib(validator=v.instance_of(str))
-    output: str = attr.ib(validator=v.instance_of(str))
-    variables: typing.Mapping[str, str] = attr.ib()
+    transaction: bool = attr.ib(
+        validator=v.instance_of(bool),
+        default=False
+    )
+    variables: typing.Mapping[str, str] = attr.ib(default={})
 
 
 @attr.s
@@ -56,7 +58,7 @@ class ConfigInternal(object):
 
     variables: typing.Mapping[str, str] = attr.ib(default=dict())
 
-    targets: typing.Mapping[str, str] = attr.ib(default=dict())
+    targets: typing.Mapping[str, TargetConfig] = attr.ib(default=dict())
 
 
 @attr.s
@@ -87,7 +89,6 @@ class ConfigfileVersion1(object):
         target_config = TargetConfig(
             transaction=self.transaction,
             schema_template=self.schema_template,
-            output=self.output,
             variables={}
         )
         config = ConfigInternal(
@@ -99,9 +100,40 @@ class ConfigfileVersion1(object):
         return config
 
 
+@attr.s
+class ConfigfileVersion11(object):
+    version: str = attr.ib(validator=v.in_(["1.1"]))
+    template_directories: typing.List[TemplateDir] = attr.ib(
+        validator=v.instance_of(list),
+        default=[]
+    )
+
+    template_packages: typing.List[TemplatePackage] = attr.ib(
+        validator=v.instance_of(list),
+        default=[]
+    )
+
+    variables: typing.Mapping[str, str] = attr.ib(default=dict())
+
+    targets: typing.Mapping[str, TargetConfig] = attr.ib(default=dict())
+
+    def extract(self) -> ConfigInternal:
+        print(self.targets)
+
+        config = ConfigInternal(
+            template_directories=self.template_directories,
+            template_packages=self.template_packages,
+            variables=self.variables,
+            targets={t: TargetConfig(**v)
+                     for t, v in self.targets.items()}
+        )
+        return config
+
+
 CONFIG_FILE_VERSIONS = {
     "1": ConfigfileVersion1,
-    "1.0": ConfigfileVersion1
+    "1.0": ConfigfileVersion1,
+    "1.1": ConfigfileVersion11
 }
 
 

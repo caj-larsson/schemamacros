@@ -57,3 +57,29 @@ variables:
     test_var: "FOO"
 schema_template: "schema.sql"
 """
+
+
+@pytest.fixture
+def config11_yaml():
+    return """
+version: "1.1"
+template_directories:
+    - "tests/schema/templates"
+
+template_packages: []
+
+targets:
+    schema_shadowed_out.sql:
+        transaction: True
+        schema_template: "schema.sql"
+        variables:
+            shadowed: "True"
+
+    schema_out.sql:
+        schema_template: "schema.sql"
+
+variables:
+    test_var: "FOO"
+    shadowed: "False"
+
+"""
