@@ -56,19 +56,26 @@ def render_target(project_loader: loaders.BaseLoader,
     return render_text
 
 
-def render(config: ConfigInternal):
+def render(config: ConfigInternal, targets=None):
+    if targets is None:
+        targets = config.targets.keys()
+
     loader = build_loader(config.template_directories,
                           config.template_packages)
     output = {outpath: render_target(loader,
                                      config.variables,
                                      target)
-              for outpath, target in config.targets.items()}
+              for outpath, target in config.targets.items()
+              if outpath in targets}
 
     return output
 
 
-def compile(config: ConfigInternal):
-    for outpath, schema_text in render(config).items():
+def compile(config: ConfigInternal, targets=None):
+    if targets is None:
+        targets = config.targets.keys()
+
+    for outpath, schema_text in render(config, targets).items():
         with open(outpath, 'w') as f:
             f.write(schema_text)
             f.flush()

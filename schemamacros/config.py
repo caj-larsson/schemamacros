@@ -118,8 +118,6 @@ class ConfigfileVersion11(object):
     targets: typing.Mapping[str, TargetConfig] = attr.ib(default=dict())
 
     def extract(self) -> ConfigInternal:
-        print(self.targets)
-
         config = ConfigInternal(
             template_directories=self.template_directories,
             template_packages=self.template_packages,
