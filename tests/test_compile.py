@@ -52,17 +52,7 @@ def test_module_templates(config_dict_modules):
     config = cfg.build_config_inner(config_dict_modules)
     schema_text = c.render(config)["schema_out.sql"].strip()
 
-    with tempfile.NamedTemporaryFile('r') as f:
-        config_tmp_dict = dict(config_dict_modules)
-        config_tmp_dict["output"] = f.name
-
-        config_tmp = cfg.build_config_inner(config_tmp_dict)
-        c.compile(config_tmp)
-        schema_text_c = f.read().strip()
-
-    assert(schema_text_c != '' and type(schema_text_c) == str)
     assert(schema_text != '')
-    assert(schema_text_c == schema_text)
 
 
 def test_compile_cwd(config_dict):

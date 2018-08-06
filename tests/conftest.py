@@ -22,20 +22,22 @@ def config_dict():
 @pytest.fixture
 def config_dict_modules():
     return {
+
         "template_directories": [],
         "template_packages": [
-            {
-                "package_name": "tests.schema",
-                "template_path": "templates"
-            }
+            "tests.schema:templates"
         ],
         "variables": {
             "test_var": "FOO"
         },
-        "transaction": True,
-        "output": "schema_out.sql",
-        "version": "1.0",
-        "schema_template": "schema.sql"
+
+        "targets": {
+            "schema_out.sql": {
+                "schema_template": "schema.sql",
+                "transaction": True
+            }
+        },
+        "version": "1.2"
     }
 
 

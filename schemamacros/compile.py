@@ -1,5 +1,5 @@
 import typing
-from .config import ConfigInternal, TargetConfig
+from .config import Config, TargetConfig
 from jinja2 import loaders, Environment
 
 
@@ -24,9 +24,9 @@ def build_layout(transaction, headers=[header_tpl], before_schema="", after_sche
 
 def build_loader(paths, packages):
     fs_loaders = [loaders.FileSystemLoader(path) for path in paths]
+
     package_loaders = [loaders.PackageLoader(package.package_name, package.template_path)
                        for package in packages]
-
     return loaders.ChoiceLoader(fs_loaders + package_loaders)
 
 
@@ -56,7 +56,7 @@ def render_target(project_loader: loaders.BaseLoader,
     return render_text
 
 
-def render(config: ConfigInternal, targets=None):
+def render(config: Config, targets=None):
     if targets is None:
         targets = config.targets.keys()
 
@@ -71,7 +71,7 @@ def render(config: ConfigInternal, targets=None):
     return output
 
 
-def compile(config: ConfigInternal, targets=None):
+def compile(config: Config, targets=None):
     if targets is None:
         targets = config.targets.keys()
 

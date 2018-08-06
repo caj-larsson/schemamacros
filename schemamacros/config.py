@@ -23,16 +23,6 @@ class TemplateDir(str):
 
 
 @attr.s
-class TemplatePackage(object):
-    package_name: str = attr.ib(validator=v.instance_of(str))
-    template_path: str = attr.ib(validator=v.instance_of(str))
-
-    @classmethod
-    def from_dict(cls, config_obj):
-        return cls(**config_obj)
-
-
-@attr.s
 class TargetConfig(object):
     schema_template: str = attr.ib(validator=v.instance_of(str))
     transaction: bool = attr.ib(
@@ -42,58 +32,57 @@ class TargetConfig(object):
     variables: typing.Mapping[str, str] = attr.ib(default={})
 
 
+class TemplatePackage(object):
+    def __init__(self, package_str: str):
+        name, *rest = package_str.split(":")
+
+        if len(rest) > 1:
+            raise ValueError("A package string can't contain more than one colon")
+
+        self.package_name = name
+
+        if len(rest) == 1:
+            self.template_path = rest[0]
+        else:
+            self.template_path = 'templates'
+
+
 @attr.s
-class ConfigInternal(object):
+class Config(object):
     template_directories: typing.List[TemplateDir] = attr.ib(
         validator=v.instance_of(list),
         convert=lambda x: list(map(TemplateDir, x)),
         default=[]
     )
 
-    template_packages: typing.List[TemplatePackage] = attr.ib(
-        validator=v.instance_of(list),
-        convert=lambda x: list(map(TemplatePackage.from_dict, x)),
-        default=[]
-    )
-
+    template_packages: typing.List[TemplatePackage] = attr.ib(default=list())
     variables: typing.Mapping[str, str] = attr.ib(default=dict())
-
     targets: typing.Mapping[str, TargetConfig] = attr.ib(default=dict())
 
 
 @attr.s
 class ConfigfileVersion1(object):
     version: str = attr.ib(validator=v.in_(["1", "1.0"]))
-
     schema_template: str = attr.ib(validator=v.instance_of(str))
-
     output: str = attr.ib(validator=attr.validators.instance_of(str))
-
     template_directories: typing.List[TemplateDir] = attr.ib(
         validator=v.instance_of(list)
     )
-
+    template_packages: typing.List[str] = attr.ib(default=list())
     transaction: bool = attr.ib(
         validator=v.instance_of(bool),
         default=False
     )
-
     variables: typing.Mapping[str, str] = attr.ib(default=dict())
 
-    template_packages: typing.List[TemplatePackage] = attr.ib(
-        validator=v.instance_of(list),
-        default=[]
-    )
-
-    def extract(self) -> ConfigInternal:
+    def extract(self) -> Config:
         target_config = TargetConfig(
             transaction=self.transaction,
             schema_template=self.schema_template,
             variables={}
         )
-        config = ConfigInternal(
+        config = Config(
             template_directories=self.template_directories,
-            template_packages=self.template_packages,
             variables=self.variables,
             targets={self.output: target_config}
         )
@@ -101,26 +90,22 @@ class ConfigfileVersion1(object):
 
 
 @attr.s
-class ConfigfileVersion11(object):
-    version: str = attr.ib(validator=v.in_(["1.1"]))
+class ConfigfileVersion12(object):
+    version: str = attr.ib(validator=v.in_(["1.2", "1.1"]))
     template_directories: typing.List[TemplateDir] = attr.ib(
         validator=v.instance_of(list),
         default=[]
     )
 
-    template_packages: typing.List[TemplatePackage] = attr.ib(
-        validator=v.instance_of(list),
-        default=[]
-    )
-
+    template_packages: typing.List[str] = attr.ib(default=list())
     variables: typing.Mapping[str, str] = attr.ib(default=dict())
-
     targets: typing.Mapping[str, TargetConfig] = attr.ib(default=dict())
 
-    def extract(self) -> ConfigInternal:
-        config = ConfigInternal(
+    def extract(self) -> Config:
+        config = Config(
             template_directories=self.template_directories,
-            template_packages=self.template_packages,
+            template_packages=[TemplatePackage(x)
+                               for x in self.template_packages],
             variables=self.variables,
             targets={t: TargetConfig(**v)
                      for t, v in self.targets.items()}
@@ -131,11 +116,12 @@ class ConfigfileVersion11(object):
 CONFIG_FILE_VERSIONS = {
     "1": ConfigfileVersion1,
     "1.0": ConfigfileVersion1,
-    "1.1": ConfigfileVersion11
+    "1.1": ConfigfileVersion12,
+    "1.2": ConfigfileVersion12
 }
 
 
-def build_config_inner(config_dict) -> ConfigInternal:
+def build_config_inner(config_dict) -> Config:
     if "version" not in config_dict:
         raise ValueError("Config does not have a version")
 
@@ -145,7 +131,6 @@ def build_config_inner(config_dict) -> ConfigInternal:
         raise ValueError("Version %s is not supported", version)
 
     versioned_config = CONFIG_FILE_VERSIONS[version](**config_dict)
-
     return versioned_config.extract()
 
 
